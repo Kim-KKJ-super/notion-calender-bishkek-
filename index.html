@@ -1,81 +1,424 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>Simple Calendar</title>
-  <style>
-    body { margin:0; padding:0; font-family: system-ui, sans-serif; }
-    #calendar { width: 100%; max-width: 320px; margin: 8px auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px; box-sizing: border-box; }
-    .cal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-    .cal-weekdays, .cal-days { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; }
-    .cal-weekdays div { font-size:12px; font-weight:600; padding:4px 0; }
-    .cal-days div { padding:6px 0; font-size:13px; }
-    .cal-days div.today { background:#1976d2; color:white; border-radius:50%; }
-    .cal-days div.empty { color:#ccc; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Frame-Options" content="ALLOWALL">
+    <title>Bishkek Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .calendar-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+            padding: 35px;
+            max-width: 500px;
+            width: 100%;
+            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .timezone-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .timezone-info::before {
+            content: "🌍";
+            font-size: 16px;
+        }
+
+        .current-date-time {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .current-time {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .current-full-date {
+            font-size: 15px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding: 0 5px;
+        }
+
+        .month-year {
+            color: #333;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .weekday {
+            text-align: center;
+            color: #667eea;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .weekday.weekend {
+            color: #f5576c;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            position: relative;
+            background: white;
+            border: 2px solid transparent;
+        }
+
+        .day:hover {
+            background: linear-gradient(135deg, #f5f7ff 0%, #f0f2ff 100%);
+            transform: scale(1.08);
+            border-color: #667eea;
+        }
+
+        .day.other-month {
+            color: #ccc;
+            background: transparent;
+        }
+
+        .day.other-month:hover {
+            background: #f8f8f8;
+        }
+
+        .day.today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        .day.today:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            transform: scale(1.08);
+        }
+
+        .day.selected {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-weight: 700;
+        }
+
+        .day.weekend {
+            color: #f5576c;
+        }
+
+        .day.weekend.other-month {
+            color: #ffd4d4;
+        }
+
+        @media (max-width: 500px) {
+            .calendar-wrapper {
+                padding: 25px;
+            }
+
+            .month-year {
+                font-size: 22px;
+            }
+
+            .current-time {
+                font-size: 28px;
+            }
+
+            .day {
+                font-size: 13px;
+            }
+
+            .nav-btn {
+                width: 38px;
+                height: 38px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            body {
+                padding: 10px;
+            }
+
+            .calendar-wrapper {
+                padding: 20px;
+            }
+
+            .current-time {
+                font-size: 24px;
+            }
+
+            .day {
+                font-size: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="calendar">
-    <div class="cal-header">
-      <button id="prev-month">◀</button>
-      <span id="cal-title"></span>
-      <button id="next-month">▶</button>
+    <div class="calendar-wrapper">
+        <div class="timezone-info">
+            비슈케크 시간 (UTC+6)
+        </div>
+
+        <div class="current-date-time">
+            <div class="current-time" id="currentTime">--:--:--</div>
+            <div class="current-full-date" id="fullDate">----년 --월 --일</div>
+        </div>
+
+        <div class="calendar-header">
+            <div class="month-year" id="monthYear"></div>
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="previousMonth()" aria-label="이전 달">‹</button>
+                <button class="nav-btn" onclick="nextMonth()" aria-label="다음 달">›</button>
+            </div>
+        </div>
+        
+        <div class="weekdays">
+            <div class="weekday weekend">일</div>
+            <div class="weekday">월</div>
+            <div class="weekday">화</div>
+            <div class="weekday">수</div>
+            <div class="weekday">목</div>
+            <div class="weekday">금</div>
+            <div class="weekday weekend">토</div>
+        </div>
+        
+        <div class="days-grid" id="daysGrid"></div>
     </div>
-    <div class="cal-weekdays">
-      <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
-    </div>
-    <div class="cal-days" id="cal-days"></div>
-  </div>
 
-  <script>
-    const titleEl = document.getElementById('cal-title');
-    const daysEl = document.getElementById('cal-days');
-    const prevBtn = document.getElementById('prev-month');
-    const nextBtn = document.getElementById('next-month');
+    <script>
+        // Bishkek timezone (UTC+6)
+        const BISHKEK_OFFSET = 6 * 60; // minutes
 
-    let current = new Date();
-
-    function renderCalendar(date) {
-      daysEl.innerHTML = '';
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      titleEl.textContent = `${year}년 ${month + 1}월`;
-
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const startWeekday = firstDay.getDay();
-      const daysInMonth = lastDay.getDate();
-
-      for (let i = 0; i < startWeekday; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'empty';
-        daysEl.appendChild(cell);
-      }
-
-      const today = new Date();
-      const isThisMonth =
-        today.getFullYear() === year && today.getMonth() === month;
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const cell = document.createElement('div');
-        cell.textContent = d;
-        if (isThisMonth && d === today.getDate()) {
-          cell.classList.add('today');
+        function getBishkekTime() {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            return new Date(utc + (BISHKEK_OFFSET * 60000));
         }
-        daysEl.appendChild(cell);
-      }
-    }
 
-    prevBtn.onclick = () => {
-      current = new Date(current.getFullYear(), current.getMonth() - 1, 1);
-      renderCalendar(current);
-    };
-    nextBtn.onclick = () => {
-      current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-      renderCalendar(current);
-    };
+        let currentDate = getBishkekTime();
+        let selectedDate = null;
 
-    renderCalendar(current);
-  </script>
+        const monthNames = [
+            '1월', '2월', '3월', '4월', '5월', '6월',
+            '7월', '8월', '9월', '10월', '11월', '12월'
+        ];
+
+        const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+        function updateCurrentTime() {
+            const bishkekTime = getBishkekTime();
+            const hours = String(bishkekTime.getHours()).padStart(2, '0');
+            const minutes = String(bishkekTime.getMinutes()).padStart(2, '0');
+            const seconds = String(bishkekTime.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('currentTime').textContent = `${hours}:${minutes}:${seconds}`;
+            
+            const year = bishkekTime.getFullYear();
+            const month = bishkekTime.getMonth() + 1;
+            const date = bishkekTime.getDate();
+            const dayName = dayNames[bishkekTime.getDay()];
+            
+            document.getElementById('fullDate').textContent = 
+                `${year}년 ${month}월 ${date}일 ${dayName}`;
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            document.getElementById('monthYear').textContent = 
+                `${year}년 ${monthNames[month]}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            
+            const daysGrid = document.getElementById('daysGrid');
+            daysGrid.innerHTML = '';
+            
+            const today = getBishkekTime();
+            const isCurrentMonth = today.getFullYear() === year && 
+                                   today.getMonth() === month;
+            
+            // Previous month days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = daysInPrevMonth - i;
+                const dayEl = createDayElement(day, 'other-month', 0);
+                daysGrid.appendChild(dayEl);
+            }
+            
+            // Current month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                let classes = isWeekend ? 'weekend' : '';
+                
+                if (isCurrentMonth && day === today.getDate()) {
+                    classes += ' today';
+                }
+                
+                const dayEl = createDayElement(day, classes, dayOfWeek);
+                daysGrid.appendChild(dayEl);
+            }
+            
+            // Next month days
+            const totalCells = daysGrid.children.length;
+            const remainingCells = Math.ceil(totalCells / 7) * 7 - totalCells;
+            
+            for (let day = 1; day <= remainingCells; day++) {
+                const dayEl = createDayElement(day, 'other-month', 0);
+                daysGrid.appendChild(dayEl);
+            }
+        }
+
+        function createDayElement(day, className = '', dayOfWeek = 0) {
+            const dayEl = document.createElement('div');
+            dayEl.className = `day ${className}`.trim();
+            dayEl.textContent = day;
+            
+            dayEl.onclick = function() {
+                if (!this.classList.contains('today')) {
+                    document.querySelectorAll('.day.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    if (!this.classList.contains('other-month')) {
+                        this.classList.add('selected');
+                    }
+                }
+            };
+            
+            return dayEl;
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // Initialize
+        renderCalendar();
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+    </script>
 </body>
 </html>
